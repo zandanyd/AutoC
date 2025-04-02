@@ -43,11 +43,10 @@ python cli.py extract --help (to see the available options)
 python cli.py extract --url <blog_post_url>
 ```
 
-<img width="800" alt="image" src="https://github.com/user-attachments/assets/2022e30d-8474-48ae-a342-b9b69b96692b" />
+<img width="800" alt="Image" src="https://github.com/user-attachments/assets/664295f2-9ed6-4121-a12a-847402e27fe3" />
 
 ## 🚀 Bonus - Try our UI (Experimental)
-
-<img width="800" alt="image" src="https://github.com/user-attachments/assets/8bef5a7c-3d85-4480-b72d-5decc711d18d" />
+<img width="800" alt="Image" src="https://github.com/user-attachments/assets/aedf3614-78ef-438e-8db5-e7398f88fc6c" />
 
 ### 🏃Up and running options:
 Assuming the app `.env` file is configured correctly, you can run the app using one of the following options:
