@@ -1,0 +1,13 @@
+@use "@carbon/colors";
+@use "@carbon/layout";
+@use "@carbon/type";
+
+.qna_container {
+  padding: layout.$spacing-03;
+  margin-bottom: layout.$spacing-03;
+  @include type.type-style("body-long-01");
+
+  .answer {
+    color: colors.$gray-40;
+  }
+}

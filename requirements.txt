@@ -1,0 +1,25 @@
+# dev
+python-dotenv
+black
+
+# core
+diskcache
+pydantic
+langgraph
+langchain
+langchain_ibm
+langchain_openai
+docling
+requests
+beautifulsoup4
+pyyaml
+websockets
+
+# consumption
+fastapi
+uvicorn
+click
+rich
+
+# monitoring
+langsmith

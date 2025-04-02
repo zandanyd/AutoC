@@ -1,0 +1,30 @@
+@use "@carbon/colors";
+@use "@carbon/layout";
+@use "@carbon/type";
+
+.search_banner_container {
+  background:
+    linear-gradient(217deg, rgba(135, 56, 157, 0.8), rgba(255, 0, 0, 0) 70.71%),
+    linear-gradient(127deg, #161616, rgba(0, 255, 0, 0) 70.71%),
+    linear-gradient(336deg, rgba(0, 0, 255, 0.8), rgba(0, 0, 255, 0) 70.71%);
+  padding: layout.$spacing-05;
+  margin-bottom: layout.$spacing-05;
+  border-radius: 8px;
+  border: 1px solid colors.$gray-80;
+
+  .search_banner_title {
+    @include type.type-style("productive-heading-02");
+    display: flex;
+    align-items: center;
+    margin-bottom: layout.$spacing-03;
+    svg {
+      margin-right: layout.$spacing-02;
+    }
+  }
+
+  .form_container {
+    display: flex;
+    flex-direction: row;
+    margin-bottom: layout.$spacing-03;
+  }
+}

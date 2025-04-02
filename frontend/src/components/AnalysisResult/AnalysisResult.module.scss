@@ -1,0 +1,27 @@
+@use "@carbon/colors";
+@use "@carbon/layout";
+@use "@carbon/type";
+
+.analysis_result_container {
+  .header_title {
+    @include type.type-style("productive-heading-04");
+    margin-bottom: layout.$spacing-03;
+    margin-top: layout.$spacing-03;
+  }
+
+  .card_container {
+    padding: layout.$spacing-02;
+    box-shadow: layout.$spacing-03;
+
+    .card_content {
+      background-color: colors.$gray-90;
+      padding: layout.$spacing-05;
+      border-radius: layout.$spacing-03;
+    }
+
+    .card_title {
+      @include type.type-style("productive-heading-02");
+      margin-bottom: layout.$spacing-05;
+    }
+  }
+}

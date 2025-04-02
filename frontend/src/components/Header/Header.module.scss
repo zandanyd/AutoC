@@ -1,0 +1,24 @@
+@use "@carbon/colors";
+@use "@carbon/layout";
+@use "@carbon/type";
+
+.header_container {
+  .title_container {
+    display: flex;
+    align-items: center;
+    margin-bottom: layout.$spacing-02;
+    .logo {
+      width: layout.$spacing-08;
+      height: layout.$spacing-08;
+      margin-right: layout.$spacing-03;
+    }
+    .title {
+      @include type.type-style("productive-heading-04");
+    }
+  }
+  .description {
+    @include type.type-style("body-long-01");
+    color: colors.$gray-40;
+    margin-bottom: layout.$spacing-03;
+  }
+}

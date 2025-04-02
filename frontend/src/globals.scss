@@ -1,0 +1,15 @@
+@use "@carbon/react" with (
+  $font-path: "@ibm/plex"
+);
+@use "@carbon/colors";
+@use "@carbon/layout";
+@use "@carbon/type";
+@use "@carbon/grid";
+
+//@use "./components/Banner/banner.scss";
+
+@include grid.flex-grid();
+
+:root {
+  background-color: colors.$gray-100;
+}
