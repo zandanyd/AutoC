@@ -90,6 +90,25 @@ def _display_results(console: Console, res: dict, url: str):
     else:
         console.print("No IoCs found\n")
 
+    # TRAM MITRE Classification
+    mitre_attacks = res.get("mitre_attacks", [])
+    if mitre_attacks is None:
+        return 
+    mitre_text = Text(f"\n🎯 MITRE ATT&CK TECHNIQUES ({len(mitre_attacks)})\n", style="bold yellow")
+    console.print(mitre_text)
+
+    if mitre_attacks:
+        table = Table(show_header=True, header_style="bold magenta")
+        table.add_column("ID", style="cyan")
+        table.add_column("Name", style="white")
+        table.add_column("URL", style="green", overflow="fold")
+
+        for attack in mitre_attacks:
+            table.add_row(attack["id"], attack["name"], attack["url"])
+        console.print(table)
+    else:
+        console.print("No MITRE ATT&CK techniques detected\n")    
+
 
 @click.group()
 def cli():

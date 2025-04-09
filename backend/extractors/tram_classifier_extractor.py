@@ -1,29 +1,42 @@
 import torch
 import json
-import os
 import joblib
 from transformers import BertTokenizer
 from typing import List, Optional
+from huggingface_hub import hf_hub_download
+import os
 
 
-
-class TramClassifierExtractor:
-    def __init__(self, article_content: str, model_path: str, threshold: float = 0.2, keywords: List[str] = [], qna: Optional[List[dict]] = None,):
+class mitreClassifierExtractor:
+    def __init__(
+        self,
+        article_content: str,
+        model_repo: str = "dvir056/mitre_ttp",
+        threshold: float = 0.2,
+        keywords: List[str] = [],
+        qna: Optional[List[dict]] = None,
+    ):
         self.article_content = article_content
-        self.model_path = model_path
         self.threshold = threshold
         self.keywords = keywords
         self.qna = qna or []
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.tokenizer = BertTokenizer.from_pretrained(model_path)
-        self.model = torch.jit.load(os.path.join(model_path, "model_scripted.pt")).to(self.device)
+
+        # === Load model, tokenizer, label binarizer from Hugging Face ===
+        self.model_path = model_repo
+        self.tokenizer = BertTokenizer.from_pretrained(self.model_path)
+
+        scripted_model_path = hf_hub_download(repo_id=model_repo, filename="model_scripted.pt")
+        self.model = torch.jit.load(scripted_model_path).to(self.device)
         self.model.eval()
-        self.mlb = joblib.load(os.path.join(model_path, "label_binarizer.pkl"))
 
-        self.mitre_map = self._load_mitre_map()
+        label_binarizer_path = hf_hub_download(repo_id=model_repo, filename="label_binarizer.pkl")
+        self.mlb = joblib.load(label_binarizer_path)
 
-    def _load_mitre_map(self):
-        json_path = os.path.join(self.model_path, "enterprise-attack.json")
+        mitre_json_path = hf_hub_download(repo_id=model_repo, filename="enterprise-attack.json")
+        self.mitre_map = self._load_mitre_map(mitre_json_path)
+
+    def _load_mitre_map(self, json_path: str):
         with open(json_path, "r", encoding="utf-8") as f:
             data = json.load(f)
 
@@ -39,21 +52,20 @@ class TramClassifierExtractor:
         return mapping
 
     def classify(self):
-        text = self.article_content
         chunks = []
-        if len(self.tokenizer.encode(text, add_special_tokens=False)) > 512:
-            chunks = self._split_text_into_chunks(text)
-            len_chunks = len(chunks)
-            print(len_chunks)
-       
-        else:
-            chunks = [text]
 
+        # 1. Split article
+        if len(self.tokenizer.encode(self.article_content, add_special_tokens=False)) > 512:
+            chunks = self._split_text_into_chunks(self.article_content)
+        else:
+            chunks = [self.article_content]
+
+        # 2. Add keywords
         if self.keywords:
             keyword_text = " ".join(self.keywords)
-            chunks.append(keyword_text)  
+            chunks.append(keyword_text)
 
-        # Add QnA answers as separate chunks
+        # 3. Add QnA answers
         for item in self.qna:
             answer = item.get("answer", "").strip()
             if answer:
@@ -61,7 +73,8 @@ class TramClassifierExtractor:
                     chunks.extend(self._split_text_into_chunks(answer))
                 else:
                     chunks.append(answer)
-    
+
+        # 4. Predict
         all_preds = set()
         for chunk in chunks:
             inputs = self.tokenizer(chunk, return_tensors="pt", padding=True, truncation=True, max_length=512)
@@ -74,10 +87,8 @@ class TramClassifierExtractor:
                 labels = list(self.mlb.inverse_transform(preds)[0])
                 all_preds.update(labels)
 
-        # Enrich the technique IDs with metadata
-        enriched_techniques = self.enrich_ids_with_metadata(list(all_preds))
-        return enriched_techniques
-    
+        return self.enrich_ids_with_metadata(list(all_preds))
+
     def _split_text_into_chunks(self, text, max_tokens=512, stride=256):
         tokens = self.tokenizer.encode(text, add_special_tokens=False)
         chunks = []
@@ -88,6 +99,7 @@ class TramClassifierExtractor:
             if i + max_tokens >= len(tokens):
                 break
         return chunks
+
     def enrich_ids_with_metadata(self, technique_ids):
         results = []
         for tid in technique_ids:
