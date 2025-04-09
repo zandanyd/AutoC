@@ -75,19 +75,25 @@ class mitreClassifierExtractor:
                     chunks.append(answer)
 
         # 4. Predict
-        all_preds = set()
+        all_preds = {}
         for chunk in chunks:
             inputs = self.tokenizer(chunk, return_tensors="pt", padding=True, truncation=True, max_length=512)
             inputs = {k: v.to(self.device) for k, v in inputs.items()}
 
             with torch.no_grad():
                 logits = self.model(inputs["input_ids"], inputs.get("attention_mask"), inputs.get("token_type_ids"))
-                probs = torch.sigmoid(logits).cpu().numpy()
-                preds = (probs > self.threshold).astype(int)
-                labels = list(self.mlb.inverse_transform(preds)[0])
-                all_preds.update(labels)
+                probs = torch.sigmoid(logits).cpu().numpy()[0]
 
-        return self.enrich_ids_with_metadata(list(all_preds))
+            for idx, prob in enumerate(probs):
+                if prob > self.threshold:
+                    label = self.mlb.classes_[idx]
+                    if label not in all_preds or all_preds[label] < prob:
+                        all_preds[label] = prob  # Save the highest prob for each label
+
+        # Sort by descending probability
+        sorted_preds = sorted(all_preds.items(), key=lambda x: x[1], reverse=True)
+        sorted_labels = [tid for tid, _ in sorted_preds]
+        return self.enrich_ids_with_metadata(sorted_labels)
 
     def _split_text_into_chunks(self, text, max_tokens=512, stride=256):
         tokens = self.tokenizer.encode(text, add_special_tokens=False)

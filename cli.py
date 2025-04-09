@@ -93,6 +93,7 @@ def _display_results(console: Console, res: dict, url: str):
     # TRAM MITRE Classification
     mitre_attacks = res.get("mitre_attacks", [])
     if mitre_attacks is None:
+        console.print("[red]❌ Error: MITRE TTP classification failed. Check model path or loading issues.[/red]\n")
         return 
     mitre_text = Text(f"\n🎯 MITRE ATT&CK TECHNIQUES ({len(mitre_attacks)})\n", style="bold yellow")
     console.print(mitre_text)

@@ -131,8 +131,15 @@ def mitre_ttp_classifier_node(state: PipelineState) -> Command:
     if not article_textual_content:
         return Command(goto=END, update={"mitre_attacks": []})
 
-    extractor = mitreClassifierExtractor(article_content=article_textual_content, model_repo = model_path, qna=qna)
-    mitre_ttp = extractor.classify()  # This will now return enriched data
+    try:
+        extractor = mitreClassifierExtractor(
+            article_content=article_textual_content,
+            model_repo=model_path,
+            qna=qna
+        )
+        mitre_ttp = extractor.classify()
+    except Exception as e:
+        mitre_ttp = None
 
     return Command(
         goto=END,
