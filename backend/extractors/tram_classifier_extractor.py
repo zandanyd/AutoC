@@ -4,15 +4,15 @@ import joblib
 from transformers import BertTokenizer
 from typing import List, Optional
 from huggingface_hub import hf_hub_download
-import os
-
+import blingfire
+from collections import defaultdict
 
 class mitreClassifierExtractor:
     def __init__(
         self,
         article_content: str,
         model_repo: str = "dvir056/mitre_ttp",
-        threshold: float = 0.2,
+        threshold: float = 0.3,
         keywords: List[str] = [],
         qna: Optional[List[dict]] = None,
     ):
@@ -87,8 +87,7 @@ class mitreClassifierExtractor:
             for idx, prob in enumerate(probs):
                 if prob > self.threshold:
                     label = self.mlb.classes_[idx]
-                    if label not in all_preds or all_preds[label] < prob:
-                        all_preds[label] = prob  # Save the highest prob for each label
+                    all_preds[label] = all_preds.get(label, 0) + prob
 
         # Sort by descending probability
         sorted_preds = sorted(all_preds.items(), key=lambda x: x[1], reverse=True)
@@ -96,14 +95,24 @@ class mitreClassifierExtractor:
         return self.enrich_ids_with_metadata(sorted_labels)
 
     def _split_text_into_chunks(self, text, max_tokens=512, stride=256):
-        tokens = self.tokenizer.encode(text, add_special_tokens=False)
+        sentences = blingfire.text_to_sentences(text).split('\n')
+
         chunks = []
-        for i in range(0, len(tokens), stride):
-            chunk = tokens[i:i + max_tokens]
-            if chunk:
-                chunks.append(self.tokenizer.decode(chunk))
-            if i + max_tokens >= len(tokens):
-                break
+        current_chunk = ""
+        for sentence in sentences:
+            tentative = f"{current_chunk} {sentence}".strip() if current_chunk else sentence
+            token_count = len(self.tokenizer.encode(tentative, add_special_tokens=False))
+
+            if token_count <= max_tokens:
+                current_chunk = tentative
+            else:
+                if current_chunk:
+                    chunks.append(current_chunk.strip())
+                current_chunk = sentence
+
+        if current_chunk:
+            chunks.append(current_chunk.strip())
+
         return chunks
 
     def enrich_ids_with_metadata(self, technique_ids):

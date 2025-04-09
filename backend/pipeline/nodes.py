@@ -3,6 +3,8 @@ from dotenv import load_dotenv
 import logging
 from langgraph.graph import END
 from langgraph.types import Command
+
+
 from backend.pipeline.state import PipelineState
 from backend.pipeline.node_types import (
     KEYWORDS_EXTRACTOR_NODE,
@@ -127,7 +129,7 @@ def mitre_ttp_classifier_node(state: PipelineState) -> Command:
            update={"mitre_attacks": None}, 
         )
     article_textual_content = state.get("article_textual_content")
-    qna = state.get("qna", [])
+    qna = []
     if not article_textual_content:
         return Command(goto=END, update={"mitre_attacks": []})
 
@@ -139,6 +141,7 @@ def mitre_ttp_classifier_node(state: PipelineState) -> Command:
         )
         mitre_ttp = extractor.classify()
     except Exception as e:
+        logger.error(e)
         mitre_ttp = None
 
     return Command(
