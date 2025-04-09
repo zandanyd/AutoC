@@ -6,9 +6,9 @@ RUN apt update && apt install -y curl && \
     apt install -y nodejs && \
     apt clean && rm -rf /var/lib/apt/lists/*
 
-
+# Install system dependencies
 RUN pip3 install --no-cache-dir --upgrade \
-    pip
+    pip setuptools wheel
 
 WORKDIR /app
 COPY requirements.txt .
