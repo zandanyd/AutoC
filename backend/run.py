@@ -23,6 +23,7 @@ def run(url: Optional[str] = None, ping: bool = False, keywords: List[str]=[], a
         "qna": [],
         "keywords_found": [],
         "iocs_found": [],
+        "mitre_attacks": [],
         "error": None,
     }
 
@@ -41,6 +42,7 @@ def run(url: Optional[str] = None, ping: bool = False, keywords: List[str]=[], a
     if ping:
         positive_qna = get_positive_qna(qna=qna)
         return {"keywords_found": keywords_found, "positive_analyst_questions": positive_qna}
+    mitre_attacks = res.get("mitre_attacks", [])
 
     return {
         "article_textual_content": article,
@@ -50,6 +52,7 @@ def run(url: Optional[str] = None, ping: bool = False, keywords: List[str]=[], a
             {"type": ioc.model_dump()["type"].name, "value": ioc.model_dump()["value"]}
             for ioc in iocs
         ],
+        "mitre_attacks": mitre_attacks,
     }
 
 

@@ -8,12 +8,14 @@ from backend.pipeline.node_types import (
     KEYWORDS_EXTRACTOR_NODE,
     QNA_EXTRACTOR_NODE,
     IOCS_EXTRACTOR_NODE,
+    TRAM_CLASSIFIER_NODE,
 )
 from backend.parsers.html_parser import HTMLParser
 from backend.extractors.keywords_extractor import KeywordsExtractor
 from backend.extractors.qna_extractor import QnaExtractor
 from backend.extractors.iocs_extractor import IOCsExtractor
 from backend.enrichment.enrich_iocs import EnrichIOCs
+from backend.extractors.tram_classifier_extractor import TramClassifierExtractor
 
 load_dotenv()
 logger = logging.getLogger(__name__)
@@ -113,6 +115,26 @@ def iocs_extractor_node(state: PipelineState) -> Command:
     enriched_iocs = iocs_enrichment.enrich_iocs()
 
     return Command(
-        goto=END,
+        goto=TRAM_CLASSIFIER_NODE,
         update={"iocs_found": enriched_iocs},
+    )
+
+def tram_classifier_node(state: PipelineState) -> Command:
+    model_path = os.getenv("API_MITRE_TTP")
+    if not model_path:
+        return Command(
+            goto=END,
+           update={"mitre_attacks": None}, 
+        )
+    article_textual_content = state.get("article_textual_content")
+    qna = state.get("qna", [])
+    if not article_textual_content:
+        return Command(goto=END, update={"mitre_attacks": []})
+
+    extractor = TramClassifierExtractor(article_content=article_textual_content, model_path = model_path, qna=qna)
+    mitre_attacks = extractor.classify()  # This will now return enriched data
+
+    return Command(
+        goto=END,
+        update={"mitre_attacks": mitre_attacks},
     )
