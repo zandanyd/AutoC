@@ -11,6 +11,8 @@ import docling.exceptions
 from docling.document_converter import DocumentConverter
 import requests
 from bs4 import BeautifulSoup
+from urllib.parse import urljoin
+
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -35,7 +37,7 @@ class HTMLParser:
                 img = Image.open(BytesIO(response.content))
             else:
                 content_type = response.headers.get('Content-Type')
-                print(
+                logger.info(
                     f"Skipped: {image_src} (status: {response.status_code}, content-type: {content_type})")
 
         # Load from base64 (optional enhancement)
@@ -45,10 +47,10 @@ class HTMLParser:
 
         elif len(self._overlap_with_base_url(image_src)) > 0:
             overlap = self._overlap_with_base_url(image_src)
-            response = requests.get(self.url[:-len(overlap)] + image_src)
+            response = requests.get(urljoin(self.url[:-len(overlap)], image_src))
             img = Image.open(BytesIO(response.content))
         else:
-            print(f"Unsupported image src format: {image_src}")
+            logger.info(f"Unsupported image src format: {image_src}")
 
         # OCR on the image
         text = pytesseract.image_to_string(img)
@@ -88,7 +90,7 @@ class HTMLParser:
                 text = self.extract_text_from_image(image_src=src)
                 res.append(text)
             except Exception as e:
-                print(f"Failed to process image {i} ({src}): {e}")
+                logger.info(f"Failed to process image {i} ({src}): {e}")
         return ''.join(res)
 
     @staticmethod
