@@ -91,3 +91,26 @@ npm run dev
 
 Once the app is up and running, you can access it at [http://localhost:5173](http://localhost:5173)
 
+## 🔨 MCP tool for Claude Desktop (Experimental)
+```bash
+pip install -r requirements.txt
+```
+
+Edit claude desktop config file and add the following lines to the `mcpServers` section:
+```json
+{
+  "mcpServers": {
+    "AutoC": {
+      "command": "uv",
+      "args": [
+        "--directory",
+        "/PATH/TO/AutoC",
+        "run",
+        "mcp_server.py"
+      ]
+    }
+  }
+}
+```
+
+Restart the app, you should see the AutoC MCP server in the list of available MCP servers.
