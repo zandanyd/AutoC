@@ -92,6 +92,9 @@ npm run dev
 Once the app is up and running, you can access it at [http://localhost:5173](http://localhost:5173)
 
 ## 🔨 MCP tool for Claude Desktop (Experimental)
+
+<img width="800" alt="Image" src="https://github.com/user-attachments/assets/489b02cf-9a06-4613-8b8e-fc2f16f33782" />
+
 ```bash
 pip install -r requirements.txt
 ```
