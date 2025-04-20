@@ -20,6 +20,7 @@ fastapi
 uvicorn
 click
 rich
+mcp
 
 # monitoring
 langsmith
