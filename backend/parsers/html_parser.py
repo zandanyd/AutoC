@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 class HTMLParser:
-    def __init__(self, url: str, use_ocr: bool = True):
+    def __init__(self, url: str, use_ocr: bool = False):
         self.url = url
         self.converter = DocumentConverter()
         self.use_ocr: bool = use_ocr
@@ -27,7 +27,7 @@ class HTMLParser:
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
         }
 
-    def extract_text_from_image(self, image_src) -> str:
+    def extract_text_from_image(self, image_src: str) -> str:
         img = None
 
         # Load image from URL
@@ -46,8 +46,7 @@ class HTMLParser:
             img = Image.open(BytesIO(base64.b64decode(base64_data)))
 
         elif len(self._overlap_with_base_url(image_src)) > 0:
-            overlap = self._overlap_with_base_url(image_src)
-            response = requests.get(urljoin(self.url[:-len(overlap)], image_src))
+            response = requests.get(urljoin(self.url, image_src))
             img = Image.open(BytesIO(response.content))
         else:
             logger.info(f"Unsupported image src format: {image_src}")
