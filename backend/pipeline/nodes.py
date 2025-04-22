@@ -26,7 +26,7 @@ def html_extractor_node(state: PipelineState) -> Command:
         return Command(goto=END, update={"error": "No blog URL provided"})
 
     logger.info(f"Extracting content from {url}")
-    parser = HTMLParser(url=url)
+    parser = HTMLParser(url=url, use_ocr=os.getenv("ANALYZE_BLOG_IMAGES", 'false') == 'true')
     article_textual_content = parser.get_textual_content()
 
     return Command(
