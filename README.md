@@ -69,7 +69,7 @@ npm run build
 Once the build is complete, you can run the app using the following command from the root directory:
 ```bash
 cd ..
-python -m uvicorn main:app --host 0.0.0.0 --port 8000
+python -m uvicorn main:app --host 0.0.0.0 --port 8000 --workers 4
 ```
 One the app is up and running, you can access it at [http://localhost:8000](http://localhost:8000)
 
