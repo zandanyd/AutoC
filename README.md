@@ -69,7 +69,7 @@ npm run build
 Once the build is complete, you can run the app using the following command from the root directory:
 ```bash
 cd ..
-python -m uvicorn main:app --host 0.0.0.0 --port 8000
+python -m uvicorn main:app --host 0.0.0.0 --port 8000 --workers 4
 ```
 One the app is up and running, you can access it at [http://localhost:8000](http://localhost:8000)
 
@@ -91,3 +91,29 @@ npm run dev
 
 Once the app is up and running, you can access it at [http://localhost:5173](http://localhost:5173)
 
+## 🔨 MCP tool for Claude Desktop (Experimental)
+
+<img width="800" alt="Image" src="https://github.com/user-attachments/assets/489b02cf-9a06-4613-8b8e-fc2f16f33782" />
+
+```bash
+pip install -r requirements.txt
+```
+
+Edit claude desktop config file and add the following lines to the `mcpServers` section:
+```json
+{
+  "mcpServers": {
+    "AutoC": {
+      "command": "uv",
+      "args": [
+        "--directory",
+        "/PATH/TO/AutoC",
+        "run",
+        "mcp_server.py"
+      ]
+    }
+  }
+}
+```
+
+Restart the app, you should see the AutoC MCP server in the list of available MCP servers.

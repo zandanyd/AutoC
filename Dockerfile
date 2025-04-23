@@ -6,9 +6,9 @@ RUN apt update && apt install -y curl && \
     apt install -y nodejs && \
     apt clean && rm -rf /var/lib/apt/lists/*
 
-
+# Install system dependencies
 RUN pip3 install --no-cache-dir --upgrade \
-    pip
+    pip setuptools wheel
 
 WORKDIR /app
 COPY requirements.txt .
@@ -19,4 +19,4 @@ RUN cd frontend && npm install && npm run build
 
 EXPOSE 8000
 
-CMD ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]

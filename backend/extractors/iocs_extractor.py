@@ -68,7 +68,7 @@ class IOCsExtractor:
         )
 
     def extract_iocs_from_text(self) -> List[IOC]:
-        iocs = []
+        iocs, val_l = [], []
         tasks = {
             IOCType.URL.name: self._extract_ioc(IOCType.URL),
             IOCType.IP.name: self._extract_ioc(IOCType.IP),
@@ -77,6 +77,11 @@ class IOCsExtractor:
             IOCType.CHROME_EXTENSION.name: self._extract_ioc(IOCType.CHROME_EXTENSION),
         }
         res = RunnableParallel(**tasks).invoke(input={})
-        for iocs_of_type in res.values():
-            iocs.extend(iocs_of_type)
+
+        # make sure we remove duplicate iocs
+        for ioc_of_type in res.values():
+            for ioc in ioc_of_type:
+                if ioc.value not in val_l:
+                    iocs.append(ioc)
+                    val_l.append(ioc.value)
         return iocs

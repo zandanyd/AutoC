@@ -14,12 +14,14 @@ requests
 beautifulsoup4
 pyyaml
 websockets
+pytesseract
 
 # consumption
 fastapi
 uvicorn
 click
 rich
+mcp
 
 # monitoring
 langsmith

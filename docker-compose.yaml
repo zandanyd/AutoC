@@ -7,3 +7,22 @@ services:
       - "8000:8000"
     restart: unless-stopped
     command: [ "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000" ]
+    networks:
+      - autoc-net
+
+  nginx: # Optional Nginx service
+    image: nginx:latest
+    container_name: nginx
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - autoc
+    networks:
+      - autoc-net
+    restart: unless-stopped
+
+networks:
+  autoc-net:
+    driver: bridge
