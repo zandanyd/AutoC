@@ -93,7 +93,7 @@ def _display_results(console: Console, res: dict, url: str):
     # TRAM MITRE Classification
     mitre_attacks = res.get("mitre_attacks", [])
     if mitre_attacks is None:
-        return 
+        return
     mitre_text = Text(f"\n🎯 MITRE ATT&CK TECHNIQUES ({len(mitre_attacks)})\n", style="bold yellow")
     console.print(mitre_text)
 
@@ -101,14 +101,21 @@ def _display_results(console: Console, res: dict, url: str):
         table = Table(show_header=True, header_style="bold magenta")
         table.add_column("ID", style="cyan")
         table.add_column("Name", style="white")
-        table.add_column("URL", style="green", overflow="fold")
+        table.add_column("Max Confidence", style="green", justify="right")
+        table.add_column("URL", style="blue", overflow="fold")
 
         for attack in mitre_attacks:
-            table.add_row(attack["id"], attack["name"], attack["url"])
+            confidence = f"{attack.get('confidence', 0):.3f}"
+            table.add_row(
+                attack["id"],
+                attack["name"],
+                confidence,
+                attack["url"],
+            )
+
         console.print(table)
     else:
-        console.print("No MITRE ATT&CK techniques detected\n")    
-
+        console.print("No MITRE ATT&CK techniques detected\n")
 
 @click.group()
 def cli():

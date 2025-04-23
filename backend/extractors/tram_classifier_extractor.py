@@ -13,12 +13,10 @@ class mitreClassifierExtractor:
         article_content: str,
         model_repo: str = "dvir056/mitre_ttp",
         threshold: float = 0.3,
-        keywords: List[str] = [],
         qna: Optional[List[dict]] = None,
     ):
         self.article_content = article_content
         self.threshold = threshold
-        self.keywords = keywords
         self.qna = qna or []
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -54,19 +52,16 @@ class mitreClassifierExtractor:
     def classify(self):
         chunks = []
 
-        # 1. Split article
+        # 1. Split article into chunks
         if len(self.tokenizer.encode(self.article_content, add_special_tokens=False)) > 512:
             chunks = self._split_text_into_chunks(self.article_content)
         else:
             chunks = [self.article_content]
 
-        # 2. Add keywords
-        if self.keywords:
-            keyword_text = " ".join(self.keywords)
-            chunks.append(keyword_text)
-
-        # 3. Add QnA answers
+        # 2. Add QnA answers (skip MITRE-related questions)
         for item in self.qna:
+            if item.get("question", "").strip() == "Which MITRE ATT&CK techniques are described in the context":
+                continue
             answer = item.get("answer", "").strip()
             if answer:
                 if len(self.tokenizer.encode(answer, add_special_tokens=False)) > 512:
@@ -74,8 +69,10 @@ class mitreClassifierExtractor:
                 else:
                     chunks.append(answer)
 
-        # 4. Predict
-        all_preds = {}
+        # 3. Predict for each chunk
+        from collections import defaultdict
+        all_preds = defaultdict(list)
+
         for chunk in chunks:
             inputs = self.tokenizer(chunk, return_tensors="pt", padding=True, truncation=True, max_length=512)
             inputs = {k: v.to(self.device) for k, v in inputs.items()}
@@ -87,12 +84,27 @@ class mitreClassifierExtractor:
             for idx, prob in enumerate(probs):
                 if prob > self.threshold:
                     label = self.mlb.classes_[idx]
-                    all_preds[label] = all_preds.get(label, 0) + prob
+                    all_preds[label].append(prob)
 
-        # Sort by descending probability
-        sorted_preds = sorted(all_preds.items(), key=lambda x: x[1], reverse=True)
-        sorted_labels = [tid for tid, _ in sorted_preds]
-        return self.enrich_ids_with_metadata(sorted_labels)
+        # 4. Sort by max confidence
+        sorted_preds = sorted(
+            all_preds.items(),
+            key=lambda x: max(x[1]),
+            reverse=True
+        )
+
+        # 5. Prepare results with max confidence
+        results = []
+        for tid, confidences in sorted_preds:
+            info = self.mitre_map.get(tid, {"name": "Unknown Technique", "url": ""})
+            results.append({
+                "id": tid,
+                "name": info["name"],
+                "confidence": round(max(confidences), 4),
+                "url": info["url"]
+            })
+
+        return results
 
     def _split_text_into_chunks(self, text, max_tokens=512, stride=256):
         sentences = blingfire.text_to_sentences(text).split('\n')
