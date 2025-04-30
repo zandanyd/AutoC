@@ -144,59 +144,6 @@ def mitre_ttp_classifier_node(state: PipelineState) -> Command:
         logger.error(e)
         mitre_ttp = None
 
-    # --------------------------------------------------------------------------------------------------------------------
-    # ✅ LLM Evaluation step (printed only)
-    try:
-        if mitre_ttp:
-            from backend.extractors.qna_extractor import QnaExtractor
-            from langchain_core.messages import HumanMessage
-            from langchain_core.prompts import ChatPromptTemplate, SystemMessagePromptTemplate
-            from langchain_core.output_parsers import StrOutputParser
-
-            # Format model output as readable lines: "T1055 - Process Injection"
-            formatted_techniques = [
-                f"{item['id']} - {item['name']}" for item in mitre_ttp if item.get("id") and item.get("name")
-            ]
-            formatted_list = "\n".join(formatted_techniques)
-
-            eval_question = (
-                "Are the following MITRE ATT&CK techniques relevant to the article content?\n\n"
-                f"{formatted_list}"
-            )
-
-            # Create prompt using strict evaluator system message
-            strict_system_prompt = (
-                "You are an expert in threat intelligence and MITRE ATT&CK evaluation. "
-                "Given the article content and a list of techniques predicted by a model, "
-                "your task is to critically assess whether the predictions are accurate based solely on the context.\n\n"
-                "Please provide:\n"
-                "1. A verdict: One of 'Correct', 'Partially correct', or 'Incorrect'.\n"
-                "2. A confidence score (0–100%) indicating how certain you are in your verdict.\n"
-                "3. A brief justification based on the context.\n\n"
-                "Be honest and do not assume correctness unless clearly supported by the article. "
-                "If the techniques are not mentioned or clearly implied, mark them as incorrect.\n\n"
-                "Context: {context}"
-            )
-
-            system_message = SystemMessagePromptTemplate.from_template(
-                template=strict_system_prompt,
-                partial_variables={"context": article_textual_content},
-            )
-            user_message = HumanMessage(content=eval_question)
-            prompt = ChatPromptTemplate.from_messages([system_message, user_message])
-
-            # Use the same LLM as QnaExtractor
-            evaluator = QnaExtractor(article_content=article_textual_content, analyst_questions=[])
-            chain = prompt | evaluator.llm | StrOutputParser()
-
-            eval_answer = chain.invoke({})
-
-            print(f"\n🧠 LLM Evaluation of MITRE Classification:\nQ: {eval_question}\nA: {eval_answer}\n")
-
-    except Exception as eval_error:
-        logger.warning(f"Failed to evaluate MITRE classification via LLM: {eval_error}")
-
-    #--------------------------------------------------------------------------------------------------------------------
     return Command(
         goto=END,
         update={"mitre_attacks": mitre_ttp},
