@@ -10,16 +10,22 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def run(url: Optional[str] = None, ping: bool = False, keywords: List[str]=[], analyst_questions: List[str]=[]) -> Any:
+def run(
+    url: Optional[str] = None,
+    raw_text: Optional[str] = None,
+    ping: bool = False,
+    keywords: List[str] = [],
+    analyst_questions: List[str] = [],
+) -> Any:
     graph = build_graph()
     inputs = {
         "url": url,
         "settings": {
-                        "skip_ioc_extraction": ping,
-                        "keywords": keywords,
-                        "analyst_questions": analyst_questions
-                    },
-        "article_textual_content": None,
+            "skip_ioc_extraction": ping,
+            "keywords": keywords,
+            "analyst_questions": analyst_questions,
+        },
+        "article_textual_content": raw_text,
         "qna": [],
         "keywords_found": [],
         "iocs_found": [],
@@ -27,7 +33,7 @@ def run(url: Optional[str] = None, ping: bool = False, keywords: List[str]=[], a
         "error": None,
     }
 
-    logger.info(f"🕵🏼‍ Analyzing url: {url}")
+    logger.info(f"🕵🏼‍ Analyzing {'url: ' + url if url else 'raw text'}")
     res = graph.invoke(input=inputs)
 
     if res.get("error"):
@@ -41,7 +47,10 @@ def run(url: Optional[str] = None, ping: bool = False, keywords: List[str]=[], a
 
     if ping:
         positive_qna = get_positive_qna(qna=qna)
-        return {"keywords_found": keywords_found, "positive_analyst_questions": positive_qna}
+        return {
+            "keywords_found": keywords_found,
+            "positive_analyst_questions": positive_qna,
+        }
     mitre_attacks = res.get("mitre_attacks", [])
 
     return {
