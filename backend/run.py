@@ -12,10 +12,10 @@ logger = logging.getLogger(__name__)
 
 def run(
     url: Optional[str] = None,
-    raw_text: Optional[str] = None,
     ping: bool = False,
     keywords: List[str] = [],
     analyst_questions: List[str] = [],
+    raw_text: Optional[str] = None,
 ) -> Any:
     graph = build_graph()
     inputs = {

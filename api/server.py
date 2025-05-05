@@ -4,7 +4,6 @@ from fastapi import FastAPI, APIRouter, HTTPException
 from fastapi.staticfiles import StaticFiles
 from api.data_models import AnalyzeRequest
 from backend.run import run
-from urllib.parse import urlparse
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -28,23 +27,28 @@ async def analyze_url(request: AnalyzeRequest):
     if not input_str:
         raise HTTPException(status_code=400, detail="Missing 'url' or 'input' field")
 
-    keywords = request.keywords or []
-    analyst_questions = request.analyst_questions or []
+    url = str(request.url)
+    keywords = request.keywords if request.keywords is not None else []
+    analyst_questions = (
+        request.analyst_questions if request.analyst_questions is not None else []
+    )
 
     try:
-        parsed = urlparse(input_str)
-        if parsed.scheme and parsed.netloc:
+        if request.raw_text:  # free text was provided
             res = run(
-                url=input_str, keywords=keywords, analyst_questions=analyst_questions
-            )
-            url_or_text_id = input_str
-        else:
-            res = run(
-                raw_text=input_str,
+                raw_text=request.raw_text,
                 keywords=keywords,
                 analyst_questions=analyst_questions,
             )
             url_or_text_id = "raw_input"
+
+        else:  # url was provided
+            res = run(
+                url=str(request.url),
+                keywords=keywords,
+                analyst_questions=analyst_questions,
+            )
+            url_or_text_id = str(request.url)
 
         return {
             "url": url_or_text_id,
@@ -52,9 +56,8 @@ async def analyze_url(request: AnalyzeRequest):
             "qna": res.get("qna"),
             "iocs_found": res.get("iocs_found"),
         }
-    except Exception:
-        logger.exception("❌ analyze_url failed")
-        raise HTTPException(status_code=500, detail="Internal Server Error")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
 
 
 @v1_router.post("/ping")
