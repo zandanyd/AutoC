@@ -1,0 +1,65 @@
+@use "@carbon/colors";
+@use "@carbon/type";
+
+.mitre_ttps_container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.tooltip_wrapper {
+  position: relative;
+  display: inline-block;
+
+  &:hover .tooltip {
+    visibility: visible;
+    opacity: 1;
+  }
+}
+
+.ttp_tag {
+  @include type.type-style("label-01");
+  background: linear-gradient(135deg, #3a3dff 0%, #512da8 100%);
+  transition: background 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+  color: colors.$white;
+  border: none;
+  cursor: pointer;
+
+  &:hover {
+    background: linear-gradient(135deg, #5c5fff 0%, #673ab7 100%);
+    box-shadow: 0 0 10px rgba(96, 125, 255, 0.6);
+  }
+
+  &:focus {
+    outline: none;
+    box-shadow: none;
+  }
+}
+
+.tooltip {
+  visibility: hidden;
+  width: max-content;
+  background: linear-gradient(135deg, #3a3dff 0%, #512da8 100%);
+  color: white;
+  text-align: center;
+  border-radius: 8px;
+  padding: 8px;
+  position: absolute;
+  z-index: 1;
+  bottom: 125%;
+  left: 50%;
+  transform: translateX(-50%);
+  opacity: 0;
+  transition: opacity 0.3s;
+
+  &::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: #512da8 transparent transparent transparent;
+  }
+}

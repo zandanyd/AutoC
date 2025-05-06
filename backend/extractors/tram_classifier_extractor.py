@@ -92,7 +92,7 @@ class mitreClassifierExtractor:
         # Sort by descending probability
         sorted_preds = sorted(all_preds.items(), key=lambda x: x[1], reverse=True)
         sorted_labels = [tid for tid, _ in sorted_preds]
-        return self.enrich_ids_with_metadata(sorted_labels)
+        return self.enrich_ids_with_metadata(sorted_preds)
 
     def _split_text_into_chunks(self, text, max_tokens=512, stride=256):
         sentences = blingfire.text_to_sentences(text).split('\n')
@@ -115,13 +115,17 @@ class mitreClassifierExtractor:
 
         return chunks
 
-    def enrich_ids_with_metadata(self, technique_ids):
+    def enrich_ids_with_metadata(self, technique_scores):
         results = []
-        for tid in technique_ids:
+        for tid, score in technique_scores:
             info = self.mitre_map.get(tid, {"name": "Unknown Technique", "url": ""})
+            url = info["url"]
+            if url and not url.endswith("/"):
+                url += "/"
             results.append({
                 "id": tid,
                 "name": info["name"],
-                "url": info["url"]
+                "confidence": float(score),
+                "url": url,
             })
         return results

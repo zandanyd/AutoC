@@ -5,6 +5,7 @@ import QnA from "../QnA/QnA.tsx";
 import IOCsTable from "../IOCsTable/IOCsTable.tsx";
 import styles from "./AnalysisResult.module.scss";
 import IOCsTypeChart from "../IOCsTypeChart/IOCsTypeChart.tsx";
+import MitreTTPs from "../MitreTTPs/MitreTTPs.tsx";
 
 interface AnalysisResultProps {
   analysisResult: any;
@@ -14,6 +15,7 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ analysisResult }) => {
   const iocs = analysisResult?.iocs || [];
   const keywords = analysisResult?.keywords || [];
   const qna = analysisResult?.qna || [];
+  const mitreTTPs = analysisResult?.mitre_ttps || [];
 
   return (
     <div className={styles.analysis_result_container}>
@@ -57,6 +59,18 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ analysisResult }) => {
                     🔑 Keywords found ({keywords.length})
                   </div>
                   <KeywordsCloud keywords={keywords} />
+                </div>
+              </div>
+            </Column>
+          </Row>
+          <Row style={{ margin: 0 }}>
+            <Column>
+              <div className={styles.card_container}>
+                <div className={styles.card_content}>
+                  <div className={styles.card_title}>
+                    🛡️ MITRE TTPs found ({mitreTTPs.length})
+                  </div>
+                  <MitreTTPs mitreTTPs={mitreTTPs} />
                 </div>
               </div>
             </Column>
