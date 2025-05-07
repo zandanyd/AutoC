@@ -1,18 +1,19 @@
+import os
 import torch
 import json
 import joblib
 from transformers import BertTokenizer
 from typing import List, Optional
 from huggingface_hub import hf_hub_download
-import blingfire
-from collections import defaultdict
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+
 
 class mitreClassifierExtractor:
     def __init__(
         self,
         article_content: str,
         model_repo: str = "dvir056/mitre_ttp",
-        threshold: float = 0.3,
+        threshold: float = 0.2,
         qna: Optional[List[dict]] = None,
     ):
         self.article_content = article_content
@@ -22,16 +23,23 @@ class mitreClassifierExtractor:
 
         # === Load model, tokenizer, label binarizer from Hugging Face ===
         self.model_path = model_repo
+        self.cache_dir = os.path.expanduser("~/.cache/mitre_model")
+
         self.tokenizer = BertTokenizer.from_pretrained(self.model_path)
 
-        scripted_model_path = hf_hub_download(repo_id=model_repo, filename="model_scripted.pt")
+        config_path = hf_hub_download(repo_id=model_repo, filename="config.json", local_dir=self.cache_dir)
+        with open(config_path, "r", encoding="utf-8") as f:
+            config = json.load(f)
+            self.max_tokens = config.get("max_position_embeddings", 512)
+
+        scripted_model_path = hf_hub_download(repo_id=model_repo, filename="model_scripted.pt", local_dir=self.cache_dir)
         self.model = torch.jit.load(scripted_model_path).to(self.device)
         self.model.eval()
 
-        label_binarizer_path = hf_hub_download(repo_id=model_repo, filename="label_binarizer.pkl")
+        label_binarizer_path = hf_hub_download(repo_id=model_repo, filename="label_binarizer.pkl", local_dir=self.cache_dir)
         self.mlb = joblib.load(label_binarizer_path)
 
-        mitre_json_path = hf_hub_download(repo_id=model_repo, filename="enterprise-attack.json")
+        mitre_json_path = hf_hub_download(repo_id=model_repo, filename="enterprise-attack.json", local_dir=self.cache_dir)
         self.mitre_map = self._load_mitre_map(mitre_json_path)
 
     def _load_mitre_map(self, json_path: str):
@@ -51,20 +59,17 @@ class mitreClassifierExtractor:
 
     def classify(self):
         chunks = []
-
         # 1. Split article into chunks
-        if len(self.tokenizer.encode(self.article_content, add_special_tokens=False)) > 512:
+        if len(self.tokenizer.encode(self.article_content, add_special_tokens=False)) > self.max_tokens:
             chunks = self._split_text_into_chunks(self.article_content)
         else:
             chunks = [self.article_content]
 
-        # 2. Add QnA answers (skip MITRE-related questions)
+        # 2. Add QnA answers
         for item in self.qna:
-            if item.get("question", "").strip() == "Which MITRE ATT&CK techniques are described in the context":
-                continue
             answer = item.get("answer", "").strip()
             if answer:
-                if len(self.tokenizer.encode(answer, add_special_tokens=False)) > 512:
+                if len(self.tokenizer.encode(answer, add_special_tokens=False)) > self.max_tokens:
                     chunks.extend(self._split_text_into_chunks(answer))
                 else:
                     chunks.append(answer)
@@ -74,7 +79,7 @@ class mitreClassifierExtractor:
         all_preds = defaultdict(list)
 
         for chunk in chunks:
-            inputs = self.tokenizer(chunk, return_tensors="pt", padding=True, truncation=True, max_length=512)
+            inputs = self.tokenizer(chunk, return_tensors="pt", padding=True, truncation=True, max_length=self.max_tokens)
             inputs = {k: v.to(self.device) for k, v in inputs.items()}
 
             with torch.no_grad():
@@ -106,25 +111,19 @@ class mitreClassifierExtractor:
 
         return results
 
-    def _split_text_into_chunks(self, text, max_tokens=512, stride=256):
-        sentences = blingfire.text_to_sentences(text).split('\n')
+    def _split_text_into_chunks(self, text, stride=384):
+        # Use your existing self.tokenizer (a BertTokenizer)
+        def count_tokens(t):
+            return len(self.tokenizer.encode(t, add_special_tokens=False))
 
-        chunks = []
-        current_chunk = ""
-        for sentence in sentences:
-            tentative = f"{current_chunk} {sentence}".strip() if current_chunk else sentence
-            token_count = len(self.tokenizer.encode(tentative, add_special_tokens=False))
+        splitter = RecursiveCharacterTextSplitter(
+            chunk_size=self.max_tokens,
+            chunk_overlap=stride,
+            separators=["\n\n", "\n", ".", " "],
+            length_function=count_tokens
+        )
 
-            if token_count <= max_tokens:
-                current_chunk = tentative
-            else:
-                if current_chunk:
-                    chunks.append(current_chunk.strip())
-                current_chunk = sentence
-
-        if current_chunk:
-            chunks.append(current_chunk.strip())
-
+        chunks = splitter.split_text(text)
         return chunks
 
     def enrich_ids_with_metadata(self, technique_ids):

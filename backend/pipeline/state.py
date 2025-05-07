@@ -10,6 +10,6 @@ class PipelineState(TypedDict):
     qna: List[Dict]
     keywords_found: List[str]
     iocs_found: List[IOC]
-    mitre_attacks: List[Dict]
+    mitre_ttp: List[Dict]
     error: Optional[str]
    
