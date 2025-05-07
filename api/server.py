@@ -20,11 +20,14 @@ v1_router = APIRouter(prefix="/api/v1")
 # TODO - 3. APIs for each node (Q&A, keywords, IoCs, question)
 #
 
+
 @v1_router.post("/analyze")
 async def analyze_url(request: AnalyzeRequest):
     url = str(request.url)
     keywords = request.keywords if request.keywords is not None else []
-    analyst_questions = request.analyst_questions if request.analyst_questions is not None else []
+    analyst_questions = (
+        request.analyst_questions if request.analyst_questions is not None else []
+    )
 
     try:
         res = run(url=url, keywords=keywords, analyst_questions=analyst_questions)
@@ -43,10 +46,14 @@ async def analyze_url(request: AnalyzeRequest):
 async def ping(request: AnalyzeRequest):
     url = str(request.url)
     keywords = request.keywords if request.keywords is not None else []
-    analyst_questions = request.analyst_questions if request.analyst_questions is not None else []
+    analyst_questions = (
+        request.analyst_questions if request.analyst_questions is not None else []
+    )
 
     try:
-        res = run(url=url, ping=True, keywords=keywords, analyst_questions=analyst_questions)
+        res = run(
+            url=url, ping=True, keywords=keywords, analyst_questions=analyst_questions
+        )
         return {
             "url": url,
             "keywords_found": res.get("keywords_found"),
